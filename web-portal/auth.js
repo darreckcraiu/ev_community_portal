@@ -4,7 +4,6 @@ const auth = getAuth() //get the auth system
 
 const registerform = document.getElementById('authForm-register');
 const loginform = document.getElementById('authForm-login');
-const statusText = document.getElementById('status');
 
 //for registering
 registerform.addEventListener('submit', async (e) => {
@@ -18,9 +17,9 @@ registerform.addEventListener('submit', async (e) => {
     await createUserWithEmailAndPassword(auth, email, password);
     await signOut(auth); //immediately log out the user
     registerform.reset();
-    statusText.textContent = "Account successfully created";
+    console.log('Account successfully created');
   } catch (err) {
-    statusText.textContent = "Error: " + err.message;
+    console.log('Error: ' + err.message);
   }
 });
 
@@ -36,17 +35,26 @@ loginform.addEventListener('submit', async (e) => {
     // Try to log in
     await signInWithEmailAndPassword(auth, email, password);
     loginform.reset();
-    statusText.textContent = "Logged in!";
+    console.log('Logged in');
+    location.reload();
   } catch (err) {
-    statusText.textContent = "Error: " + err.message;
+    console.log('Error: ' + err.message);
   }
 });
 
-//to show who is currently logged in
+//this runs upon the page loading and whenever the login state is changed
 onAuthStateChanged(auth, (user) => {
     if (user) {
       console.log("Logged in as:", user.email);
+      const toHide = document.querySelectorAll('.hidden-while-user');
+      toHide.forEach(element => {
+        element.style.display = 'none';
+      })
     } else {
       console.log("Not logged in");
+      const toHide = document.querySelectorAll('.hidden-while-no-user');
+      toHide.forEach(element => {
+        element.style.display = 'none';
+      })
     }
 });

@@ -8,21 +8,22 @@
 <body>
   <h1>Welcome to the EV Community Portal</h1>
 
-  <form id="authForm-register">
+  <form id="authForm-register" class="hidden-while-user">
       <h2>Register</h2>
       <input type="email" id="email-register" placeholder="Email" required>
       <input type="password" id="password-register" placeholder="Password" required>
       <button type="submit">Submit</button>    
   </form>
-  <form id="authForm-login">
+  <form id="authForm-login" class="hidden-while-user">
       <h2>Login</h2>
       <input type="email" id="email-login" placeholder="Email" required>
       <input type="password" id="password-login" placeholder="Password" required>
       <button type="submit">Submit</button>    
   </form>
-  <p id="status"></p>
+
+  <button id="logout-button" class="hidden-while-no-user">LOGOUT</button>
   
-  <button id="create-new-button">CREATE NEW</button>
+  <button id="create-new-button" class="hidden-while-no-user">CREATE NEW</button>
   <div id="post-creation-div" class="hidden">
     <form id="post-creation-form">
       <input type="text" id="post-title" placeholder="Title">
@@ -35,7 +36,14 @@
 
   </div>
 
-  <script type="module" src="./posts.js"></script>
+  <script type="module">
+    //UPON STARTUP
+    import { loadPosts } from './functions.js';
+
+    loadPosts();
+    
+  </script>
+  <script type="module" src="./functions.js"></script>
   <script type="module" src="./auth.js"></script>
   <script type="module" src="./userActions.js"></script>    
 </body>

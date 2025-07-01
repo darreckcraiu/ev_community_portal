@@ -18,5 +18,3 @@ export async function loadPosts() {
     container.appendChild(div); //add the post div to the posts container div
   });            
 }
-
-loadPosts();

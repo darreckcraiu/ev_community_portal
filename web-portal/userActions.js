@@ -1,6 +1,6 @@
 import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
-import { loadPosts } from "./posts.js";
+import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+import { loadPosts } from "./functions.js";
 
 const db = getFirestore();
 const auth = getAuth();
@@ -43,5 +43,14 @@ postCreationForm.addEventListener('submit', async (e) => {
   else {
     console.log('post NOT submitted');
   }
+});
 
+const logoutButton = document.getElementById('logout-button');
+logoutButton.addEventListener('click', async () => {
+  try {
+    await signOut(auth);
+    location.reload();
+  } catch (err) {
+    console.log("Logout error:", err.message);
+  }
 });

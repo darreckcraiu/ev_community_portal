@@ -1,9 +1,4 @@
-import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
-import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
-import { loadPosts } from "./functions.js";
-
-const db = getFirestore();
-const auth = getAuth();
+import { db, collection, addDoc, auth } from "./firebase-config.js";
 
 const createNewButton = document.getElementById('create-new-button');
 

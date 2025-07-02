@@ -1,4 +1,4 @@
-import { db, collection, addDoc, auth } from "./firebase-config.js";
+import { db, collection, addDoc, auth, signOut } from "./firebase-config.js";
 
 const createNewButton = document.getElementById('create-new-button');
 

@@ -1,4 +1,4 @@
-import { db, collection, getDocs, doc, updateDoc } from "./firebase-config.js";
+import { db, collection, getDocs, doc, updateDoc, auth } from "./firebase-config.js";
 
 const container = document.getElementById('posts');
 container.innerHTML = '';
@@ -24,35 +24,45 @@ export async function loadPosts() {
     //event listeners for the vote buttons
     const upvoteButton = div.querySelector('.upvote-button');
     upvoteButton.addEventListener('click', async () => {
-      const upvoteSmall = div.querySelector('.upvote-small');
-      //use regex to extract the number
-      const match = upvoteSmall.textContent.match(/\d+$/);
-      let num = Number(match[0]);
-      num++;
-      upvoteSmall.textContent = `Upvotes: ${num}`;
+      if (auth.currentUser) {
+        const upvoteSmall = div.querySelector('.upvote-small');
+        //use regex to extract the number
+        const match = upvoteSmall.textContent.match(/\d+$/);
+        let num = Number(match[0]);
+        num++;
+        upvoteSmall.textContent = `Upvotes: ${num}`;
 
-      //save change in database
-      const postRef = doc(db, 'posts', postId);
-      await updateDoc(postRef, {
-        upVotes: num
-      });
+        //save change in database
+        const postRef = doc(db, 'posts', postId);
+        await updateDoc(postRef, {
+          upVotes: num
+        });        
+      }
+      else {
+        console.log('Not logged in');
+      }    
     });
     const downvoteButton = div.querySelector('.downvote-button');
     downvoteButton.addEventListener('click', async () => {
-      const downvoteSmall = div.querySelector('.downvote-small');
-      //use regex to extract the number
-      const match = downvoteSmall.textContent.match(/\d+$/);
-      let num = Number(match[0]);
-      num++;
-      downvoteSmall.textContent = `Downvotes: ${num}`;
+      if (auth.currentUser) {
+        const downvoteSmall = div.querySelector('.downvote-small');
+        //use regex to extract the number
+        const match = downvoteSmall.textContent.match(/\d+$/);
+        let num = Number(match[0]);
+        num++;
+        downvoteSmall.textContent = `Downvotes: ${num}`;
 
-      //save change in database
-      const postRef = doc(db, 'posts', postId);
-      await updateDoc(postRef, {
-        downVotes: num
-      });
-    });
-    
+        //save change in database
+        const postRef = doc(db, 'posts', postId);
+        await updateDoc(postRef, {
+          downVotes: num
+        });
+      }
+      else {
+        console.log('Not logged in');
+      }
+      
+    });    
   });        
 
 }

@@ -1,4 +1,9 @@
-import { db, collection, addDoc, auth, signOut } from "./firebase-config.js";
+import { db, collection, addDoc, doc } from "./firebase-config.js";
+import { auth, signOut } from "./auth.js";
+import { loadPosts } from "./functions.js";
+
+const adminPassword = 'password123';
+export let adminPermissions = false;
 
 const createNewButton = document.getElementById('create-new-button');
 
@@ -12,6 +17,33 @@ createNewButton.addEventListener('click', () => {
   }
 });
 
+const adminButton = document.getElementById('admin-button');
+adminButton.addEventListener('click', () => {
+  console.log(adminPermissions)
+  const adminLoginForm = document.getElementById('admin-login-form');
+  adminLoginForm.classList.toggle('hidden');
+});
+
+const adminLoginForm = document.getElementById('admin-login-form');
+adminLoginForm.addEventListener('submit', async (e) => {
+  e.preventDefault(); //prevent page reload
+
+  const password = document.getElementById('admin-password-input').value;
+  if (password === adminPassword) {
+    adminPermissions = true;
+    adminLoginForm.reset();
+    adminLoginForm.classList.toggle('hidden');
+    adminButton.style.backgroundColor = 'green';
+    const xButtons = document.querySelectorAll('.post-x-button');
+    xButtons.forEach(xButton => {
+      xButton.classList.toggle('hidden');
+    });
+  }
+  else {
+    console.log('Incorrect admin password');
+  }
+});
+
 const postCreationForm = document.getElementById('post-creation-form');
 postCreationForm.addEventListener('submit', async (e) => {
   e.preventDefault(); // Prevent page reload
@@ -21,10 +53,9 @@ postCreationForm.addEventListener('submit', async (e) => {
   async function submitPost() {
     await addDoc(collection(db, 'posts'), {
       title: title,
-      content: content,
-      upVotes: 0,
-      downVotes: 0
+      content: content
     });
+    await loadPosts();
   }
 
   if (title && content) {

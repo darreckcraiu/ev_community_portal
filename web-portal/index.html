@@ -6,20 +6,22 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <h1>Welcome to the EV Community Portal</h1>
+  <div class="title-div">
+    <h1>Welcome to the EV Community Portal</h1>    
+  </div>
 
   <form id="authForm-register" class="hidden-while-user">
-      <h2>Register</h2>
-      <input type="email" id="email-register" placeholder="Email" required>
-      <input type="password" id="password-register" placeholder="Password" required>
-      <button type="submit">Submit</button>    
+    <h2>Register</h2>
+    <input type="email" id="email-register" placeholder="Email" required>
+    <input type="password" id="password-register" placeholder="Password" required>
+    <button type="submit">Submit</button>    
   </form>
   <form id="authForm-login" class="hidden-while-user">
       <h2>Login</h2>
       <input type="email" id="email-login" placeholder="Email" required>
       <input type="password" id="password-login" placeholder="Password" required>
       <button type="submit">Submit</button>    
-  </form>
+  </form> 
 
   <button id="logout-button" class="hidden-while-no-user">LOGOUT</button>
   
@@ -31,18 +33,19 @@
       <button id="post-button" type="submit">POST</button>
     </form>    
   </div>
-  
-  <div id="posts">
 
+  <div class="admin-div">
+    <button id="admin-button" class="hidden-while-no-user">ADMIN</button>
+    <form class="hidden" id="admin-login-form">
+      <h3>Input Admin Password</h3>
+      <input type="text" id="admin-password-input">
+      <button type="submit">Submit</button> 
+    </form>
   </div>
+      
+  
+  <div id="posts"></div>
 
-  <script type="module">
-    //UPON STARTUP
-    import { loadPosts } from './functions.js';
-
-    loadPosts();
-    
-  </script>
   <script type="module" src="./functions.js"></script>
   <script type="module" src="./auth.js"></script>
   <script type="module" src="./userActions.js"></script>    

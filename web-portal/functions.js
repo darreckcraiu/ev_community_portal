@@ -1,69 +1,155 @@
-import { db, collection, getDocs, doc, updateDoc, auth } from "./firebase-config.js";
+import { db, collection, getDocs, getDoc, doc, updateDoc, deleteDoc, setDoc, query, where } from "./firebase-config.js";
+import { auth, onUserReady } from "./auth.js";
 
-const container = document.getElementById('posts');
-container.innerHTML = '';
+//user is passed in by onUserReady
+let postsLoaded = false;
+
+onUserReady(() => {
+  if (!postsLoaded) {
+    console.log('Loading posts...');
+    loadPosts();
+    postsLoaded = true;
+  }
+});
+
+
+const container = document.getElementById("posts");
+
 export async function loadPosts() {
-  const querySnapshot = await getDocs(collection(db, 'posts')); //fetch the posts and wait until they are downloaded
-  querySnapshot.forEach(postDoc => {
-    const postId = postDoc.id; //unique id for the post
-    const post = postDoc.data(); //get post data
-    const div = document.createElement('div');
-    div.id = `post-container-${postId}`; //assign a unique id to the post div
-    div.innerHTML = 
-    `
-      <h3>${post.title || 'n/a'}</h3>
-      <p>${post.content || 'n/a'}</p>
-      <small class='upvote-small'>Upvotes: ${post.upVotes || 0}</small>
-      <small class='downvote-small'>Downvotes: ${post.downVotes || 0}</small>
+  container.innerHTML = ''; // Clear posts
+
+  const querySnapshot = await getDocs(collection(db, "posts"));
+  const posts = querySnapshot.docs;
+
+  // Fetch vote data in parallel and collect post info
+  const postDataList = await Promise.all(
+    posts.map(async (postDoc) => {
+      const postId = postDoc.id;
+      const post = postDoc.data();
+
+      const upvoteQuery = query(
+        collection(db, "posts", postId, "votes"),
+        where("vote", "==", "upvote")
+      );
+      const downvoteQuery = query(
+        collection(db, "posts", postId, "votes"),
+        where("vote", "==", "downvote")
+      );
+
+      const [upvoteSnap, downvoteSnap] = await Promise.all([
+        getDocs(upvoteQuery),
+        getDocs(downvoteQuery),
+      ]);
+
+      return {
+        postId,
+        post,
+        upvoteCount: upvoteSnap.size,
+        downvoteCount: downvoteSnap.size,
+      };
+    })
+  );
+
+  // Sort by upvote count descending
+  postDataList.sort((a, b) => b.upvoteCount - a.upvoteCount);
+
+  // Add posts to DOM in sorted order
+  for (const { postId, post, upvoteCount, downvoteCount } of postDataList) {
+    const div = document.createElement("div");
+    div.id = `post-container-${postId}`;
+    div.classList.add('post-div');
+    div.innerHTML = `
+      <button class='post-x-button hidden' id='x-${postId}'>x</button>
+      <h3 class='post-title-div'>${post.title || "n/a"}</h3>
+      <p class='post-content-div'>${linkify(post.content) || "n/a"}</p>
+      <small class='upvote-small'>Upvotes: ${upvoteCount}</small>
       <button class='upvote-button'>UPVOTE</button>
+      <small class='downvote-small'>Downvotes: ${downvoteCount}</small>
       <button class='downvote-button'>DOWNVOTE</button>
     `;
+    container.appendChild(div);
 
-    container.appendChild(div); //add the post div to the posts container div
+    const upvoteButton = div.querySelector(".upvote-button");
+    const downvoteButton = div.querySelector(".downvote-button");
 
-    //event listeners for the vote buttons
-    const upvoteButton = div.querySelector('.upvote-button');
-    upvoteButton.addEventListener('click', async () => {
-      if (auth.currentUser) {
-        const upvoteSmall = div.querySelector('.upvote-small');
-        //use regex to extract the number
-        const match = upvoteSmall.textContent.match(/\d+$/);
-        let num = Number(match[0]);
-        num++;
-        upvoteSmall.textContent = `Upvotes: ${num}`;
+    const refreshCounts = async () => {
+      const [newUp, newDown] = await Promise.all([
+        getDocs(query(collection(db, "posts", postId, "votes"), where("vote", "==", "upvote"))),
+        getDocs(query(collection(db, "posts", postId, "votes"), where("vote", "==", "downvote"))),
+      ]);
+      div.querySelector(".upvote-small").textContent = `Upvotes: ${newUp.size}`;
+      div.querySelector(".downvote-small").textContent = `Downvotes: ${newDown.size}`;
+    };
 
-        //save change in database
-        const postRef = doc(db, 'posts', postId);
-        await updateDoc(postRef, {
-          upVotes: num
-        });        
+    upvoteButton.addEventListener("click", async () => {
+      const currentUser = auth.currentUser;
+      if (!currentUser) return console.log("Log in to vote");
+
+      const userID = currentUser.uid;
+      const voteRef = doc(db, "posts", postId, "votes", userID);
+      const voteSnap = await getDoc(voteRef);
+
+      if (voteSnap.exists()) {
+        const currentVote = voteSnap.data().vote;
+        if (currentVote === "upvote") {
+          await deleteDoc(voteRef);
+          console.log("Upvote removed");
+        } else {
+          await setDoc(voteRef, { vote: "upvote" });
+          console.log("Changed to upvote");
+        }
+      } else {
+        await setDoc(voteRef, { vote: "upvote" });
+        console.log("Upvote recorded");
       }
-      else {
-        console.log('Not logged in');
-      }    
+
+      await refreshCounts();
     });
-    const downvoteButton = div.querySelector('.downvote-button');
-    downvoteButton.addEventListener('click', async () => {
-      if (auth.currentUser) {
-        const downvoteSmall = div.querySelector('.downvote-small');
-        //use regex to extract the number
-        const match = downvoteSmall.textContent.match(/\d+$/);
-        let num = Number(match[0]);
-        num++;
-        downvoteSmall.textContent = `Downvotes: ${num}`;
 
-        //save change in database
-        const postRef = doc(db, 'posts', postId);
-        await updateDoc(postRef, {
-          downVotes: num
-        });
-      }
-      else {
-        console.log('Not logged in');
-      }
-      
-    });    
-  });        
+    downvoteButton.addEventListener("click", async () => {
+      const currentUser = auth.currentUser;
+      if (!currentUser) return console.log("Log in to vote");
 
+      const userID = currentUser.uid;
+      const voteRef = doc(db, "posts", postId, "votes", userID);
+      const voteSnap = await getDoc(voteRef);
+
+      if (voteSnap.exists()) {
+        const currentVote = voteSnap.data().vote;
+        if (currentVote === "downvote") {
+          await deleteDoc(voteRef);
+          console.log("Downvote removed");
+        } else {
+          await setDoc(voteRef, { vote: "downvote" });
+          console.log("Changed to downvote");
+        }
+      } else {
+        await setDoc(voteRef, { vote: "downvote" });
+        console.log("Downvote recorded");
+      }
+
+      await refreshCounts();
+    });
+
+    // DELETE button logic
+    const deleteButton = div.querySelector(`#x-${postId}`);
+    deleteButton.addEventListener("click", async () => {
+      try {
+        await deleteDoc(doc(db, "posts", postId));
+        console.log(`Post ${postId} deleted.`);
+        div.remove(); // Remove from DOM
+      } catch (error) {
+        console.error("Error deleting post:", error);
+      }
+    });
+
+  }
 }
 
+//regex given by ChatGPT
+function linkify(text) {
+  const urlRegex = /(\bhttps?:\/\/[^\s]+)/g;
+  return text.replace(urlRegex, (url) => {
+    return `<a href="${url}">${url}</a>`;
+  });
+}

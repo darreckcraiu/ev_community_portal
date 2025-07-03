@@ -1,3 +1,31 @@
+.body {
+  display: flex;
+  justify-content: center;
+}
+
 .hidden {
   display: none;
+}
+
+.title-div {
+  justify-items: center;
+}
+
+.post-title-div,
+.post-content-div {
+  text-align: center;
+}
+
+.post-div {
+  background-color: rgb(39, 39, 39, 0.1);
+  padding: 12px;
+}
+
+#posts {
+  justify-items: center;
+}
+
+.post-x-button {
+  font-size: 24px;
+  color: red;
 }
